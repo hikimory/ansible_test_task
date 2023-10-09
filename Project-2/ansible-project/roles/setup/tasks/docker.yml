@@ -1,0 +1,82 @@
+---
+# This playbook contains docker actions that will be run on "remote" host.
+  
+# sudo apt-get install *
+- name: Install required system packages
+  apt:
+    name: "{{ prep_packages }}"
+    state: present
+    update_cache: yes
+  tags:
+    - docker
+  
+# curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+- name: Add Dockers official GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  tags:
+    - docker
+  
+# sudo apt-key fingerprint 0EBFCD88
+- name: Verify that we have the key with the fingerprint
+  apt_key:
+    id: 0EBFCD88
+    state: present
+  tags:
+    - docker
+
+- name: Get Ubuntu Version
+  shell: lsb_release -cs
+  register: ubuntu_version
+  
+# sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable"
+- name: Set up the stable repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ubuntu_version.stdout}} stable
+    state: present
+    update_cache: yes
+  tags:
+    - docker
+  
+# sudo apt-get install docker-ce
+- name: Install Docker Engine and CLI
+  apt:
+    name: "{{ docker_packages }}"
+    state: latest
+    update_cache: yes
+  notify: Start docker on boot
+  tags:
+    - docker
+
+- name: Install Docker Module for Python
+  pip:
+    name: "{{ pip_packages }}"
+  
+# sudo groupadd docker
+- name: Create "docker" group
+  group:
+    name: "{{ docker_group }}"
+    state: present
+  tags:
+    - docker
+  
+# sudo usermod -aG docker ubuntu
+- name: Add remote "ubuntu" user to "docker" group
+  user:
+    name: "{{ ansible_user }}"
+    group: "{{ docker_group }}"
+    append: yes
+  tags:
+    - docker
+  
+# # sudo curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+# # sudo chmod +x /usr/local/bin/docker-compose
+# - name: Install docker-compose
+#   get_url:
+#     url: https://github.com/docker/compose/releases/download/1.20.1/docker-compose-Linux-x86_64
+#     dest: /usr/local/bin/docker-compose
+#     mode: 0755
+#   tags:
+#     - docker
+

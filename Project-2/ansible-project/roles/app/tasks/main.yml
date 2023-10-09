@@ -1,0 +1,23 @@
+---
+- name: Copy "docker" application folder across
+  copy:
+    src: "docker/"
+    dest: "{{ docker_remote_app_dir }}"
+  tags:
+    - app
+
+- name: write docker-compose file
+  template: src={{item.src}} dest={{item.dest}}
+  with_items:
+    - { src: 'env.j2', dest: '{{ docker_remote_app_dir }}/.env' }
+    - { src: 'docker-compose.yml.j2', dest: '{{ docker_remote_app_dir }}/docker-compose.yaml' }
+  tags:
+    - app
+  register: copy_docker_file
+
+- name: test docker-compose
+  docker_compose:
+    project_src: "{{ docker_remote_app_dir }}"
+    state: present
+  tags:
+    - app

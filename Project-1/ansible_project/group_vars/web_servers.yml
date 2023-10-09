@@ -1,0 +1,24 @@
+---
+# Variables listed here are applicable to "setup" role
+  
+ansible_python_interpreter: /usr/bin/python3
+docker_group: docker 
+docker_remote_app_dir: /tmp/myapp
+
+prep_packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg-agent
+  - software-properties-common
+  - python3-pip
+
+pip_packages:
+  - docker
+  - docker-compose
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  # - docker-compose

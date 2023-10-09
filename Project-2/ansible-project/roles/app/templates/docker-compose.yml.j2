@@ -1,0 +1,73 @@
+---
+version: "{{ compose_schema_version | default('3') }}"
+services:
+{% for container in containers %}
+  {{ container.service_name }}:
+    container_name: {{ container.container_name | default(container.service_name) }}
+{# build-section #}
+{% if container.build is defined %}
+    build:
+      context: {{ container.build.context }}
+      dockerfile: {{ container.build.dockerfile }}
+{% endif %}
+{# image-section #}
+{% if container.image is defined %}
+    image: {{ container.image }}
+{% endif %}
+{# restart-section #}
+{% if container.restart is defined %}
+    restart: {{ container.restart }}
+{% endif %}
+{# volumes-section #}
+{% if container.volumes is defined %}
+    volumes:
+{% for volume in container.volumes %}
+      - {{ volume }}
+{% endfor %}
+{% endif %}
+{# env_file-section #}
+{% if container.env_file is defined %}
+    env_file:
+{% for file in container.env_file %}
+      - {{ file }}
+{% endfor %}
+{% endif %}
+{# ports-section #}
+{% if container.ports is defined %}
+    ports:
+{% for port in container.ports %}
+      - {{ port }}
+{% endfor %}
+{% endif %}
+{# networks-section #}
+{% if container.networks is defined %}
+    networks:
+{% for network in container.networks %}
+      - {{ network }}
+{% endfor %}
+{% endif %}
+{# depends_on-section #}
+{% if container.depends_on is defined %}
+    depends_on:
+{% for dependent in container.depends_on %}
+      - {{ dependent }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+
+{% if volumes is defined %}
+volumes:
+{% if volumes.name is defined %}
+  {{ volumes.name }}:
+{% endif %}
+{% endif %}
+
+{% if networks is defined %}
+networks:
+{% if networks.name is defined %}
+  {{ networks.name }}:
+{% endif %}
+{% if networks.name is defined %}
+    driver: {{ networks.driver }}
+{% endif %}
+{% endif %}

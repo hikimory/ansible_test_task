@@ -1,0 +1,90 @@
+mysql_user: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          66653733396166626537323830626666653637623432393364666537333836316161653632373362
+          3437343866376262656637336134373634373537326664320a343764666561643539653439663635
+          37656365633230306432393239613061303565643331623961383337343530333434343034653332
+          6130663665656564350a366633666331316165383036343037316466376431623961343533306235
+          3861
+
+mysql_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          63663266653235636636343336363235613535373332363335333837616566396466313963323463
+          3664333862663563366165316536393136613065373837360a373933363663383336646565613439
+          63346466346566323066313764633061636432333238303130343762653338363532343034396134
+          6631393731373933610a396538356563663234376431396631346163613533323433383230393661
+          6135
+
+mysql_root_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          35666662303435313533626534656136353936396438303136636236623638343231313765333430
+          6466306537343036663633303131333738633562393463390a326466656139363834353838626165
+          33643065663934313833623431636336623039316464353666313066363066653738343334663366
+          3037653862386338660a656438663137386363643437393834316432313735373063363536656233
+          3335
+
+environment_variables:
+  - MYSQL_DATABASE=docker_demo
+  - MYSQL_USER={{ mysql_user }}
+  - MYSQL_PASSWORD={{ mysql_password }}
+  - MYSQL_ROOT_PASSWORD={{ mysql_root_password }}
+  - PMA_HOST=mysql
+  - PMA_PORT=3306
+
+containers:
+  - service_name: mysql
+    image: mysql:5.7.37
+    container_name: db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/sql/:/docker-entrypoint-initdb.d/
+      - dbdata:/var/lib/mysql
+    networks:
+      - app-network
+
+  - service_name: phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    container_name: myadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    networks:
+      - app-network
+    depends_on:
+      - mysql
+
+  - service_name: php
+    build:
+      context: .
+      dockerfile: php/Dockerfile
+    container_name: app
+    restart: unless-stopped
+    volumes:
+      - ./webapp:/var/www/html
+    networks:
+      - app-network
+    depends_on:
+      - mysql
+
+  - service_name: nginx
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    volumes:
+      - ./webapp:/var/www/html
+      - ./nginx/site.conf:/etc/nginx/conf.d/app.conf
+    ports:
+      - "8000:80"
+    networks:
+      - app-network
+    depends_on:
+      - mysql
+      - php
+
+volumes:
+  name: dbdata
+
+networks:
+  name: app-network
+  driver: bridge
